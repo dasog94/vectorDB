@@ -1,5 +1,6 @@
 import pandas as pd
 import weaviate
+from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_weaviate.vectorstores import WeaviateVectorStore
 from langchain.schema import Document
@@ -143,6 +144,21 @@ class WeaviateManager:
 
         return self.vector_store.similarity_search(query, k=k)
 
+    def search_hybrid(self, query: str, k: int = 5, alpha: float = 0.7) -> list[tuple[Document, float]]:
+        """
+        하이브리드 유사도 검색 수행
+        Args:
+            query: 검색 쿼리
+            k: 반환할 문서 수
+            alpha: 텍스트 유사도와 메타데이터 유사도의 가중치 (0~1 사이)
+        Returns:
+            list[tuple[Document, float]]: 유사한 문서와 해당 유사도 점수의 리스트
+        """
+        if not self.vector_store:
+            raise ValueError("먼저 데이터를 적재해주세요.")
+
+        return self.vector_store.similarity_search_with_score(query, k=k, alpha=alpha)
+
 
 def setup_bge_m3_embeddings():
     """
@@ -213,8 +229,20 @@ def main():
         print("\n검색 결과:")
         for i, doc in enumerate(results, 1):
             print(f"{i}. {doc.page_content}")
-            print(f"   메타데이터: {doc.metadata}")
+            print(f"   metadata: {doc.metadata}")
             print()
+
+        # 7. 하이브리드 검색 테스트
+        results = manager.search_hybrid("기술 관련 정보", k=2, alpha=0.7)
+
+        print("\n하이브리드 검색 결과:")
+        for i, doc in enumerate(results, 1):
+            print(f"{i}. {doc[0].page_content}")
+            print(f"   metadata: {doc[0].metadata}")
+            print(f"   score: {doc[1]}")
+            print()
+
+
     finally:
         # 반드시 연결 종료
         manager.close()
