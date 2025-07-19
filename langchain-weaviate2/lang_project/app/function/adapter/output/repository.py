@@ -1,15 +1,17 @@
 from datasets import load_dataset
 import weaviate
-import os
-from weaviate_toolkit.WeaviateManager import WeaviateManager
-from weaviate_toolkit.EmbeddingModelSetup import setup_bge_m3_embeddings as setup_embeddings
+
+from lang_project.langgraph_search.graph import graph_app
+from lang_project.langgraph_search.util.state import GraphState
+from lang_project.weaviate_toolkit.WeaviateManager import WeaviateManager
+from lang_project.weaviate_toolkit.EmbeddingModelSetup import setup_bge_m3_embeddings
 import pandas as pd
 
 class FunctionRepository:
     def __init__(self):
         self.manager = WeaviateManager(
             weaviate_client = weaviate.connect_to_local(),
-            embeddings = setup_embeddings()
+            embeddings = setup_bge_m3_embeddings()
         )
 
     def search_hybrid(self, keyword: str, k: int, alpha: float):
@@ -18,7 +20,7 @@ class FunctionRepository:
             k=k,
             alpha=alpha
         )
-    
+
     def load_data(self):
         # declare name of the collection
         DATA_SET    = "beomi/KoAlpaca-v1.1a"
@@ -38,3 +40,8 @@ class FunctionRepository:
             index_name=INDEX_NAME,
             metadata_columns=list(df.columns) # 메타데이터 컬럼들
         )
+
+    def search_langgraph(self, keyword: str) -> GraphState:
+        response_dict = graph_app.invoke({"question": keyword, "documents": []})
+
+        return GraphState(**response_dict)

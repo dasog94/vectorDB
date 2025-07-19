@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Query
-from app.function.adapter.output.repository import FunctionRepository
-import pandas as pd
+from lang_project.app.function.adapter.output.repository import FunctionRepository
 
 function_router = APIRouter()
 repository = FunctionRepository()
@@ -21,3 +20,9 @@ async def load_data():
     repository.load_data()
 
     return {"result": "ok"}
+
+@function_router.get("/search/langgraph")
+async def search_langgraph(
+        keyword: str = Query("", description="Keyword to search for")
+):
+    return repository.search_langgraph(keyword)
